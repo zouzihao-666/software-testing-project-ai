@@ -161,6 +161,25 @@ abstract class AiReservationTestSupport {
                 String.valueOf(values.get(1)), String.valueOf(values.get(2)));
     }
 
+    protected List<HttpResult> postTwice(WebDriver driver, String path,
+                                         Map<String, String> parameters) {
+        String body = parameters.entrySet().stream()
+                .map(entry -> encode(entry.getKey()) + "=" + encode(entry.getValue()))
+                .collect(Collectors.joining("&"));
+        String script = "const done=arguments[arguments.length-1];"
+                + "const send=()=>fetch(arguments[0],{method:'POST',credentials:'same-origin',redirect:'follow',"
+                + "headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:arguments[1]})"
+                + ".then(r=>[r.status,r.url]);Promise.all([send(),send()]).then(done).catch(e=>done([[0,String(e)],[0,String(e)]]));";
+        List<?> raw = (List<?>) ((JavascriptExecutor) driver).executeAsyncScript(script, path, body);
+        List<HttpResult> results = new ArrayList<>();
+        for (Object item : raw) {
+            List<?> values = (List<?>) item;
+            results.add(new HttpResult(((Number) values.get(0)).intValue(),
+                    String.valueOf(values.get(1)), ""));
+        }
+        return results;
+    }
+
     protected void showEvidence(WebDriver driver, String caseId, boolean passed, String... lines) {
         String text = caseId + "\n" + String.join("\n", lines);
         String color = passed ? "#087f5b" : "#c92a2a";
