@@ -14,6 +14,9 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
 import java.net.URLEncoder;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -33,6 +36,7 @@ abstract class AiReservationTestSupport {
     @Autowired protected UserDao userDao;
     @Autowired protected VenueDao venueDao;
     @Autowired protected OrderDao orderDao;
+    @PersistenceContext protected EntityManager entityManager;
 
     protected User ensureUser(String userId) {
         User existing = userDao.findByUserID(userId);
@@ -122,9 +126,14 @@ abstract class AiReservationTestSupport {
     }
 
     protected List<Order> newOrders(Set<Integer> before) {
+        entityManager.clear();
         return orderDao.findAll().stream()
                 .filter(order -> !before.contains(order.getOrderID()))
                 .collect(Collectors.toList());
+    }
+
+    protected void clearPersistenceContext() {
+        entityManager.clear();
     }
 
     protected Map<String, String> params(String... values) {
